@@ -70,36 +70,36 @@ class ProductCatalog {
                     </div>
                 </div>
                 <form id="order-form">
-                    <input type="hidden" name="selectedSize" value="${selectedSize}">
+                    <input type="hidden" name="size" value="${selectedSize}">
                     <div class="form-group">
                         <label>Name:</label>
-                        <input type="text" name="customerName" required>
+                        <input type="text" name="name" required>
                     </div>
                     <div class="form-group">
                         <label>Email:</label>
-                        <input type="email" name="customerEmail" required>
+                        <input type="email" name="email" required>
                     </div>
                     <div class="form-group">
                         <label>Phone:</label>
-                        <input type="tel" name="customerPhone" required>
+                        <input type="tel" name="phone" required>
                     </div>
                     <div class="form-group">
                         <label>Address:</label>
-                        <textarea name="customerAddress" required></textarea>
+                        <textarea name="address" required></textarea>
                     </div>
                     <div class="payment-methods">
                         <h3>Payment Method</h3>
                         <div class="payment-options">
                             <label>
-                                <input type="radio" name="paymentMethod" value="card" required>
+                                <input type="radio" name="payment" value="Credit/Debit Card" required>
                                 Credit/Debit Card
                             </label>
                             <label>
-                                <input type="radio" name="paymentMethod" value="paypal">
+                                <input type="radio" name="payment" value="PayPal">
                                 PayPal
                             </label>
                             <label>
-                                <input type="radio" name="paymentMethod" value="cod">
+                                <input type="radio" name="payment" value="Cash on Delivery">
                                 Cash on Delivery
                             </label>
                         </div>
@@ -112,39 +112,86 @@ class ProductCatalog {
         document.body.appendChild(modal);
 
         const orderForm = modal.querySelector('#order-form');
-        orderForm.addEventListener('submit', (e) => {
+        orderForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            this.processOrder(product, orderForm);
-            modal.remove();
+            const submitButton = orderForm.querySelector('.submit-order');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+            
+            try {
+                await this.processOrder(product, orderForm);
+                modal.remove();
+            } catch (error) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Place Order';
+            }
         });
 
         const closeBtn = modal.querySelector('.close-modal');
         closeBtn.addEventListener('click', () => modal.remove());
     }
 
-    processOrder(product, form) {
-        const formData = new FormData(form);
-        const orderData = {
-            orderDate: new Date().toLocaleString(),
-            product: {
-                ...product,
-                size: formData.get('selectedSize')
-            },
-            customer: {
-                name: formData.get('customerName'),
-                email: formData.get('customerEmail'),
-                phone: formData.get('customerPhone'),
-                address: formData.get('customerAddress')
-            },
-            paymentMethod: formData.get('paymentMethod')
-        };
+    async processOrder(product, form) {
+        try {
+            const formData = new FormData(form);
+            
+            // Create template parameters
+            const templateParams = {
+                to_email: 'sangboih32@gmail.com',
+                customer_name: formData.get('name'),
+                customer_email: formData.get('email'),
+                customer_phone: formData.get('phone'),
+                customer_address: formData.get('address'),
+                product_name: product.name,
+                product_size: formData.get('size'),
+                product_price: product.price,
+                payment_method: formData.get('payment'),
+                order_date: new Date().toLocaleString()
+            };
 
-        // Save order to local storage
-        this.orders.push(orderData);
-        localStorage.setItem('orders', JSON.stringify(this.orders));
+            console.log('Sending email with params:', templateParams);
 
-        // Show order confirmation
-        this.showOrderConfirmation(orderData);
+            try {
+                // Send email using EmailJS with correct template ID
+                const response = await emailjs.send(
+                    'service_jf95wla',
+                    'template_yexgnho',
+                    templateParams,
+                    'm7ORooz2ZAAzs4KPc'
+                );
+
+                console.log('Email sent successfully:', response);
+
+                // Save order to local storage
+                const orderData = {
+                    orderDate: new Date().toLocaleString(),
+                    product: {
+                        ...product,
+                        size: formData.get('size')
+                    },
+                    customer: {
+                        name: formData.get('name'),
+                        email: formData.get('email'),
+                        phone: formData.get('phone'),
+                        address: formData.get('address')
+                    },
+                    paymentMethod: formData.get('payment')
+                };
+
+                this.orders.push(orderData);
+                localStorage.setItem('orders', JSON.stringify(this.orders));
+
+                // Show success confirmation
+                this.showOrderConfirmation(orderData);
+            } catch (emailError) {
+                console.error('Failed to send email:', emailError);
+                throw new Error('Failed to send order confirmation email');
+            }
+        } catch (error) {
+            console.error("Error processing order:", error);
+            alert(error.message || "There was an error processing your order. Please try again.");
+            throw error;
+        }
     }
 
     showOrderConfirmation(orderData) {
@@ -169,7 +216,7 @@ class ProductCatalog {
                     <h3>Payment Method:</h3>
                     <p>${orderData.paymentMethod}</p>
 
-                    <p class="confirmation-message">Thank you for your order! A confirmation email will be sent to ${orderData.customer.email}</p>
+                    <p class="confirmation-message">Thank you for your order! A confirmation email has been sent to sangboih32@gmail.com</p>
                 </div>
                 <button class="close-confirmation">Close</button>
             </div>
