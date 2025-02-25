@@ -80,10 +80,6 @@ class ProductCatalog {
                         <input type="email" name="email" required>
                     </div>
                     <div class="form-group">
-                        <label>Phone:</label>
-                        <input type="tel" name="phone" required>
-                    </div>
-                    <div class="form-group">
                         <label>Address:</label>
                         <textarea name="address" required></textarea>
                     </div>
@@ -137,59 +133,64 @@ class ProductCatalog {
             
             // Create template parameters
             const templateParams = {
-                to_email: 'sangboih32@gmail.com',
-                customer_name: formData.get('name'),
-                customer_email: formData.get('email'),
-                customer_phone: formData.get('phone'),
-                customer_address: formData.get('address'),
-                product_name: product.name,
-                product_size: formData.get('size'),
-                product_price: product.price,
-                payment_method: formData.get('payment'),
-                order_date: new Date().toLocaleString()
+                to_name: "Store Owner",
+                from_name: formData.get('name'),
+                from_email: formData.get('email'),
+                message: `
+                    Order Details:
+                    Product: ${product.name}
+                    Size: ${formData.get('size')}
+                    Price: $${product.price}
+                    
+                    Customer Details:
+                    Name: ${formData.get('name')}
+                    Email: ${formData.get('email')}
+                    Phone: 8798782828@ptaxis
+                    Address: ${formData.get('address')}
+                    
+                    Payment Method: ${formData.get('payment')}
+                    Order Date: ${new Date().toLocaleString()}
+                `
             };
 
-            console.log('Sending email with params:', templateParams);
+            console.log('Sending email with:', {
+                serviceId: 'service_jf95wla',
+                templateId: 'template_yexgnho',
+                params: templateParams
+            });
 
-            try {
-                // Send email using EmailJS with correct template ID
-                const response = await emailjs.send(
-                    'service_jf95wla',
-                    'template_yexgnho',
-                    templateParams,
-                    'm7ORooz2ZAAzs4KPc'
-                );
+            const response = await window.emailjs.send(
+                'service_jf95wla',
+                'template_yexgnho',
+                templateParams
+            );
 
-                console.log('Email sent successfully:', response);
+            console.log('Email sent successfully:', response);
 
-                // Save order to local storage
-                const orderData = {
-                    orderDate: new Date().toLocaleString(),
-                    product: {
-                        ...product,
-                        size: formData.get('size')
-                    },
-                    customer: {
-                        name: formData.get('name'),
-                        email: formData.get('email'),
-                        phone: formData.get('phone'),
-                        address: formData.get('address')
-                    },
-                    paymentMethod: formData.get('payment')
-                };
+            // Save order to local storage
+            const orderData = {
+                orderDate: new Date().toLocaleString(),
+                product: {
+                    ...product,
+                    size: formData.get('size')
+                },
+                customer: {
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    phone: '8798782828@ptaxis',
+                    address: formData.get('address')
+                },
+                paymentMethod: formData.get('payment')
+            };
 
-                this.orders.push(orderData);
-                localStorage.setItem('orders', JSON.stringify(this.orders));
+            this.orders.push(orderData);
+            localStorage.setItem('orders', JSON.stringify(this.orders));
 
-                // Show success confirmation
-                this.showOrderConfirmation(orderData);
-            } catch (emailError) {
-                console.error('Failed to send email:', emailError);
-                throw new Error('Failed to send order confirmation email');
-            }
+            // Show success confirmation
+            this.showOrderConfirmation(orderData);
         } catch (error) {
             console.error("Error processing order:", error);
-            alert(error.message || "There was an error processing your order. Please try again.");
+            alert("There was an error processing your order. Please try again.");
             throw error;
         }
     }
